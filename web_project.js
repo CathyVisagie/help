@@ -6,6 +6,7 @@ const items = require("./items.json");
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
+
 if (process.env.NODE_ENV === "production") {
 	app.use(express.static(path.join(__dirname, "frontend/src")));
 	app.get("*", (req, res) => {
@@ -26,38 +27,42 @@ function getItems() {
 	}
 }
 
-function addItems(title) {
-	const items = getItems();
-	items.push(title);
+function addItems(newGame) {
+	let items = getItems();
+	console.log(newGame);
+	items.push(newGame);
 	fs.writeFileSync("items.json", JSON.stringify(items));
 }
 
-function deleteItems(title) {
+function deleteItems(id) {
 	const items = getItems();
-	const i = items.indexOf(title);
+	console.log(items);
+	const i = items.indexOf(id);
 	items.splice(i, 1);
 	fs.writeFileSync("items.json", JSON.stringify(items));
 }
 
 // create new person
 app.post("/items/", (req, resp) => {
-	const title = req.query.title;
-	const items = getItems();
-	if (items.indexOf(title) > -1) {
+	let items = getItems();
+
+	if (items.length < -1) {
 		resp.send("Game already exists");
 	} else {
-		addItems(title);
+		let newGame = req.body;
+
+		addItems(newGame);
 		resp.send("Success, added game");
 	}
 });
 
 app.put("/items/", (req, resp) => {
-	const oldTitle = req.query.title;
-	const newTitle = req.query.newTitle;
+	const oldId = req.query.id;
 	const items = getItems();
-	const i = items.indexOf(oldTitle);
-	if (i > -1) {
-		items[i] = newTitle;
+	const i = items.indexOf(oldId);
+	if (oldId > 0) {
+		let newGame = req.body;
+		items[i] = newGame;
 		fs.writeFileSync("items.json", JSON.stringify(items));
 		resp.send("Success, updated game");
 	} else {
@@ -66,7 +71,7 @@ app.put("/items/", (req, resp) => {
 });
 
 // check whether person exists
-app.get("/items/", (req, resp) => {
+app.get("/items", (req, resp) => {
 	const title = req.query.title;
 	const items = getItems();
 	if (items.indexOf(title) > -1) {
@@ -77,11 +82,11 @@ app.get("/items/", (req, resp) => {
 });
 
 // delete person
-app.delete("/items/", (req, resp) => {
-	const title = req.query.title;
+app.delete("/items", (req, resp) => {
+	const id = req.query.id;
 	const items = getItems();
-	if (items.indexOf(title) > -1) {
-		deleteItems(title);
+	if (id > 0) {
+		deleteItems(id);
 		resp.send("Success, deleted game");
 	} else {
 		resp.send("Game does not exist");
